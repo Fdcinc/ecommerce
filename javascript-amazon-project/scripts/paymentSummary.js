@@ -1,4 +1,4 @@
-import { cart } from '../data/cart.js';
+import { cart, resetCart } from '../data/cart.js';
 import { getProduct } from '../data/products.js';
 import { getDeliveryOption } from '../data/deliveryOptions.js';
 import { formatCurrency } from './utils/money.js';
@@ -61,10 +61,38 @@ export function renderPaymentSummary() {
       </div>
     </div>
 
-    <button class="place-order-button button-primary">
+    <button class="place-order-button button-primary js-place-order-button">
       Place your order
     </button>
   `;
 
   document.querySelector('.js-payment-summary').innerHTML = paymentSummaryHTML;
+
+  // Event listener for the Place Order button
+  document.querySelector('.js-place-order-button')
+    .addEventListener('click', () => {
+      if (cart.length === 0) {
+        alert('Your cart is empty! Add items before placing an order.');
+        return;
+      }
+
+      // 1. Create the order object
+      const order = {
+        id: crypto.randomUUID(), // Unique order ID
+        orderTime: dayjs().format('MMMM D'),
+        totalCostCents: totalCents,
+        products: [...cart] // Shallow copy of the cart at the time of order
+      };
+
+      // 2. Save order to history (LocalStorage)
+      const orders = JSON.parse(localStorage.getItem('orders')) || [];
+      orders.unshift(order); // Add newest order to the beginning
+      localStorage.setItem('orders', JSON.stringify(orders));
+
+      // 3. Clear the cart data
+      resetCart();
+
+      // 4. Redirect to the orders page
+      window.location.href = 'orders.html';
+    });
 }
