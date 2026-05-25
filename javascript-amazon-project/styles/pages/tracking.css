@@ -43,8 +43,10 @@
   margin-bottom: 15px;
 }
 
-.current-status {
+/* --- FIXED SPECIFICITY BUG HERE --- */
+.progress-labels-container .current-status {
   color: rgb(6, 125, 98);
+  font-weight: bold;
 }
 
 @media (max-width: 575px) {

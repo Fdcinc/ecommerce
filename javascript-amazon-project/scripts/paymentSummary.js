@@ -2,6 +2,7 @@ import { cart, resetCart } from '../data/cart.js';
 import { getProduct } from '../data/products.js';
 import { getDeliveryOption } from '../data/deliveryOptions.js';
 import { formatCurrency } from './utils/money.js';
+import dayjs from 'https://unpkg.com/dayjs@1.11.10/esm/index.js';
 
 export function renderPaymentSummary() {
   let productPriceCents = 0;
@@ -76,23 +77,57 @@ export function renderPaymentSummary() {
         return;
       }
 
-      // 1. Create the order object
+      // MAP OVER CART ITEMS TO CONSTRUCT THE DETAILED PRODUCTS OBJECT
+      const orderProducts = cart.map((cartItem) => {
+        const deliveryOptionId = cartItem.deliveryOptionId || '1';
+        const deliveryOption = getDeliveryOption(deliveryOptionId);
+        
+        let deliveryDays = 7; 
+        if (deliveryOptionId === '2') deliveryDays = 3;
+        if (deliveryOptionId === '3') deliveryDays = 1;
+
+        // --- FIXED: WEEKEND SKIPPING LOGIC ---
+        let remainingDays = deliveryDays;
+        let deliveryDate = dayjs(); // Start calculations at today's time stamp
+
+        while (remainingDays > 0) {
+          deliveryDate = deliveryDate.add(1, 'day'); // Advance the calendar by 1 day
+          
+          const dayOfWeek = deliveryDate.format('dddd');
+          
+          // Only decrement remaining target days if it's a weekday
+          if (dayOfWeek !== 'Saturday' && dayOfWeek !== 'Sunday') {
+            remainingDays--;
+          }
+        }
+
+        const estimatedDeliveryTime = deliveryDate.toISOString();
+
+        return {
+          productId: cartItem.productId,
+          quantity: cartItem.quantity,
+          deliveryOptionId: deliveryOptionId,
+          estimatedDeliveryTime: estimatedDeliveryTime 
+        };
+      });
+
+      // Create the order object with the formatted products array
       const order = {
-        id: crypto.randomUUID(), // Unique order ID
-        orderTime: dayjs().format('MMMM D'),
+        id: crypto.randomUUID(), 
+        orderTime: dayjs().toISOString(), 
         totalCostCents: totalCents,
-        products: [...cart] // Shallow copy of the cart at the time of order
+        products: orderProducts
       };
 
-      // 2. Save order to history (LocalStorage)
+      // Save order to history (LocalStorage)
       const orders = JSON.parse(localStorage.getItem('orders')) || [];
-      orders.unshift(order); // Add newest order to the beginning
+      orders.unshift(order); 
       localStorage.setItem('orders', JSON.stringify(orders));
 
-      // 3. Clear the cart data
+      // Clear the cart data
       resetCart();
 
-      // 4. Redirect to the orders page
+      // Redirect to the orders page
       window.location.href = 'orders.html';
     });
 }

@@ -1,6 +1,8 @@
 import { getProduct } from '../data/products.js';
 import { formatCurrency } from './utils/money.js';
 import { addToCart, calculateCartQuantity } from '../data/cart.js';
+// 1. IMPORT DAYJS FOR DATE FORMATTING
+import dayjs from 'https://unpkg.com/dayjs@1.11.10/esm/index.js';
 
 function renderOrdersPage() {
   // Update header cart quantity
@@ -14,13 +16,16 @@ function renderOrdersPage() {
   let ordersHTML = '';
 
   orders.forEach((order) => {
+    // Format the order placed date nicely while we're at it!
+    const orderDateString = dayjs(order.orderTime).format('MMMM D');
+
     ordersHTML += `
       <div class="order-container">
         <div class="order-header">
           <div class="order-header-left-section">
             <div class="order-date">
               <div class="order-header-label">Order Placed:</div>
-              <div>${order.orderTime}</div>
+              <div>${orderDateString}</div>
             </div>
             <div class="order-total">
               <div class="order-header-label">Total:</div>
@@ -58,13 +63,21 @@ function productsListHTML(order) {
   let productsHTML = '';
   order.products.forEach((productDetails) => {
     const product = getProduct(productDetails.productId);
+    
+    // 2. CONVERT THE ESTIMATED DELIVERY TIME TO A CLEAN STRING
+    const deliveryDate = dayjs(productDetails.estimatedDeliveryTime);
+
     productsHTML += `
       <div class="product-image-container">
         <img src="${product.image}">
       </div>
       <div class="product-details">
         <div class="product-name">${product.name}</div>
-        <div class="product-delivery-date">Arriving on: August 15</div>
+        
+        <div class="product-delivery-date">
+          Arriving on: ${deliveryDate.format('MMMM D')}
+        </div>
+        
         <div class="product-quantity">Quantity: ${productDetails.quantity}</div>
         <button class="buy-again-button button-primary js-buy-again" data-product-id="${product.id}">
           <img class="buy-again-icon" src="images/icons/buy-again.png">
